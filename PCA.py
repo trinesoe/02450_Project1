@@ -8,9 +8,6 @@ from scipy.linalg import svd
 from Data_preprocessing import *
 from scipy.linalg import svd 
 
-#Ændring 
-A=1
-
 # Subtract mean value from data
 Y = X - np.ones((N, 1)) * X.mean(axis=0)
 
