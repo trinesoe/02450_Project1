@@ -78,6 +78,7 @@ print(summary_table)
 
 # Correlation matrix #
 correlation_matrix_df = np.corrcoef(X, rowvar=False)
+print(correlation_matrix_df)
 
 # Plot the correlation matrix #
 # YlGnBu
