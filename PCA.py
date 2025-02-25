@@ -9,7 +9,8 @@ from Data_preprocessing import *
 from scipy.linalg import svd 
 
 # Subtract mean value from data
-Y = X - np.ones((N, 1)) * X.mean(axis=0)
+# Use the standardized so they are on the same scale.
+Y = X_standardized - np.ones((N, 1)) * X_standardized.mean(axis=0)
 
 # PCA by computing SVD of Y
 U, S, Vh = svd(Y, full_matrices=False)
