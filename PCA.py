@@ -9,11 +9,12 @@ from Data_preprocessing import *
 from scipy.linalg import svd 
 
 # Subtract mean value from data
-# Use the standardized so they are on the same scale.
-Y = X_standardized - np.ones((N, 1)) * X_standardized.mean(axis=0)
+# We do not use the mean centering:
+# Y = X_standardized - np.ones((N, 1)) * X_standardized.mean(axis=0)
+# Because we use the standardized X, which already include mean centering
 
 # PCA by computing SVD of Y
-U, S, Vh = svd(Y, full_matrices=False)
+U, S, Vh = svd(X_standardized, full_matrices=False)
 
 #Transpose V
 V = Vh.T
