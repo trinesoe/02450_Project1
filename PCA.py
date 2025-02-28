@@ -48,10 +48,10 @@ threshold = 0.90
 
 # Plot variance explained
 plt.figure()
-plt.plot(range(1, len(rho) + 1), rho, color='cornflowerblue', linestyle='-')
-plt.plot(range(1, len(rho) + 1), np.cumsum(rho), color='palevioletred', linestyle='-')
+plt.plot(range(1, len(rho) + 1), rho, "x-", color='cornflowerblue')
+plt.plot(range(1, len(rho) + 1), np.cumsum(rho), "x-", color='palevioletred')
 plt.plot([1, len(rho)], [threshold, threshold], color='firebrick', linestyle='--')
-plt.xticks(range(0, len(rho) + 1, 1))
+plt.xticks(range(1, len(rho)+1, 1))
 plt.title("Variance explained by principal components")
 plt.xlabel("Principal component")
 plt.ylabel("Variance explained")
