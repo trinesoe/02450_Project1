@@ -129,7 +129,7 @@ print(f"Number of attributes after dropping 'chd': {len(attribute_names)}")
 # Define the principal components to plot
 pcs = [0, 1, 2]  # PC1, PC2, and PC3 (0-based indexing)
 legendStrs = ["PC" + str(e + 1) for e in pcs]
-colors = ['blue', 'green', 'red']  # Colors for each component
+colors = ['royalblue', 'mediumseagreen', 'crimson']  # Colors for each component
 bw = 0.2  # Bar width
 r = np.arange(1, len(attribute_names) + 1)  # Number of attributes (make sure it's the length of attribute_names)
 
@@ -139,7 +139,7 @@ for i, pc in enumerate(pcs):
     plt.bar(r + i * bw, V[:, pc], color=colors[i], width=bw, label=legendStrs[i], alpha=0.7)
 
 # Fix x-ticks to use all attribute names
-plt.xticks(r + bw, attribute_names, rotation=90)  # Adjust if needed
+plt.xticks(r + bw, attribute_names)  # Adjust if needed
 plt.xlabel("Attributes")
 plt.ylabel("Component Coefficients")
 plt.title("PCA Component Coefficients for PC1, PC2, and PC3")
