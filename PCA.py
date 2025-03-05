@@ -18,10 +18,10 @@ from scipy.linalg import svd
 X_standardized_df = pd.DataFrame(X_standardized, columns=attributeNames)  # attribute_names should be your column names
 
 # Now you can use drop() to drop the 'chd' column
-X_drop = X_standardized_df.drop(columns="chd", axis=1)
+# X_drop = X_standardized_df.drop(columns="chd", axis=1)
 
 # PCA by computing SVD of Y
-U, S, Vh = svd(X_drop, full_matrices=False)
+U, S, Vh = svd(X_standardized, full_matrices=False)
 
 #Transpose V
 V = Vh.T
@@ -88,7 +88,7 @@ i = 0
 j = 1
 
 # Change the colors for the PCA plot
-colors = ["blue", "red"]
+colors = ["blue", "orange"]
 
 # Plot PCA of the data
 plt.figure()
@@ -123,17 +123,17 @@ plt.show()
 
 ### Interpret PC1, PC2, and PC3 Coefficients
 # Remove "chd" from the attribute names and update `attribute_names`
-attribute_names = [name for name in df.columns if name != "chd"]  # Remove "chd" column
+# attribute_names = [name for name in df.columns if name != "chd"]  # Remove "chd" column
 
 # Check the number of attributes after dropping "chd"
-print(f"Number of attributes after dropping 'chd': {len(attribute_names)}")
+# print(f"Number of attributes after dropping 'chd': {len(attribute_names)}")
 
 # Define the principal components to plot
 pcs = [0, 1, 2]  # PC1, PC2, and PC3 (0-based indexing)
 legendStrs = ["PC" + str(e + 1) for e in pcs]
 colors = ['royalblue', 'mediumseagreen', 'crimson']  # Colors for each component
 bw = 0.2  # Bar width
-r = np.arange(1, len(attribute_names) + 1)  # Number of attributes (make sure it's the length of attribute_names)
+r = np.arange(1, len(attributeNames) + 1)  # Number of attributes (make sure it's the length of attribute_names)
 
 # Plot bar graphs for each component
 plt.figure(figsize=(12, 6))
@@ -141,7 +141,7 @@ for i, pc in enumerate(pcs):
     plt.bar(r + i * bw, V[:, pc], color=colors[i], width=bw, label=legendStrs[i], alpha=0.7)
 
 # Fix x-ticks to use all attribute names
-plt.xticks(r + bw, attribute_names)  # Adjust if needed
+plt.xticks(r + bw, attributeNames)  # Adjust if needed
 plt.xlabel("Attributes")
 plt.ylabel("Component Coefficients")
 plt.title("PCA Component Coefficients for PC1, PC2, and PC3")
@@ -155,7 +155,7 @@ plt.show()
 
 ### Correlation Circle (PCA1 and PCA2)
 # Get feature names (Assumes data is loaded as a DataFrame)
-feature_names = df.columns.drop('chd')  # Drop target variable if it's in the DataFrame
+# feature_names = df.columns.drop('chd')  # Drop target variable if it's in the DataFrame
 
 # Calculate the loadings for the first two principal components
 # Loadings = V * sqrt(Eigenvalue)
@@ -172,7 +172,7 @@ circle = plt.Circle((0, 0), 1, color='gray', fill=False)
 plt.gca().add_artist(circle)
 
 # Plot the vectors for each attribute
-for i, feature in enumerate(feature_names):
+for i, feature in enumerate(df.columns):
     plt.arrow(0, 0, loadings[i, 0], loadings[i, 1], 
               color='blue', alpha=0.8, head_width=0.05, head_length=0.05)
     plt.text(loadings[i, 0] * 1.1, loadings[i, 1] * 1.1, 
