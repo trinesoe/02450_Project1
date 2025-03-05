@@ -8,17 +8,8 @@ from scipy.linalg import svd
 from Data_preprocessing import *
 from scipy.linalg import svd 
 
-# Subtract mean value from data
-# We do not use the mean centering:
-#Y = X - np.ones((N, 1)) * X.mean(axis=0)
-#Y1 = Y * (1/np.std(Y,0))
-# Because we use the standardized X, which already include mean centering
-
 # Assuming X_standardized is a NumPy array
 X_standardized_df = pd.DataFrame(X_standardized, columns=attributeNames)  # attribute_names should be your column names
-
-# Now you can use drop() to drop the 'chd' column
-# X_drop = X_standardized_df.drop(columns="chd", axis=1)
 
 # PCA by computing SVD of Y
 U, S, Vh = svd(X_standardized, full_matrices=False)
@@ -31,20 +22,6 @@ rho = (S * S) / (S * S).sum()
 
 # Plot variance explained
 threshold = 0.90
-
-
-# Plot principal directions
-#plt.figure(figsize=(12, 6))
-#plt.imshow(V, cmap='viridis', aspect='auto')
-#plt.colorbar()
-#plt.yticks(range(len(V)), [f'PC{i+1}' for i in range(len(V))])
-#plt.xticks(range(X_standardized.shape[1]), df.columns, rotation=90)  # Assumes data.columns has attribute names 
-#plt.xlabel('Attributes')
-#plt.ylabel('Principal Components')
-#plt.title('Principal Directions (PCA Components)')
-#plt.grid(False)
-#plt.show()
-
 
 # Plot variance explained
 plt.figure()
@@ -62,22 +39,14 @@ plt.grid()
 plt.show()
 
 
-
-
-
 ### Data projection of Scatterplot
 # Project data onto the principal components
-#Z = X_drop @ V
 Z = U * S
-
 
 classLabels = X[:, -1]  # -1 takes the last column
 # Then determine which classes are in the data by finding the set of
 # unique class labels
 classNames = np.unique(classLabels)
-
-# We can assign each type of Iris class with a number by making a
-# Python dictionary as so:
 
 classDict = dict(zip(classNames, range(len(classNames))))
 C = len(classNames)
@@ -104,30 +73,8 @@ plt.grid()
 # Output result to screen
 plt.show()
 
-# Target attribute
-#y = df['chd'] 
-
-# Scatter plot of the first two principal components
-#plt.figure(figsize=(10, 6))
-#scatter = plt.scatter(Z[:, 0], Z[:, 1], c=y, alpha=0.6)  # Color by class label chd
-#plt.xlabel('PC1')
-#plt.ylabel('PC2')
-#plt.title('Data projected onto first two principal components')
-#plt.colorbar(scatter, label='CHD (Target)')
-#plt.legend()
-#plt.grid()
-#plt.show()
-
-
-
 
 ### Interpret PC1, PC2, and PC3 Coefficients
-# Remove "chd" from the attribute names and update `attribute_names`
-# attribute_names = [name for name in df.columns if name != "chd"]  # Remove "chd" column
-
-# Check the number of attributes after dropping "chd"
-# print(f"Number of attributes after dropping 'chd': {len(attribute_names)}")
-
 # Define the principal components to plot
 pcs = [0, 1, 2]  # PC1, PC2, and PC3 (0-based indexing)
 legendStrs = ["PC" + str(e + 1) for e in pcs]
@@ -150,15 +97,8 @@ plt.grid(True)
 plt.show()
 
 
-
-
-
 ### Correlation Circle (PCA1 and PCA2)
-# Get feature names (Assumes data is loaded as a DataFrame)
-# feature_names = df.columns.drop('chd')  # Drop target variable if it's in the DataFrame
-
 # Calculate the loadings for the first two principal components
-# Loadings = V * sqrt(Eigenvalue)
 loadings = V[:, :2] * S[:2]  # Use first 2 components
 
 # Normalize the loadings to lie within the unit circle (correlation)
