@@ -23,7 +23,7 @@ plt.figure(figsize=(12, 6))
 plt.boxplot(X_plot_standardized)
 plt.xticks(range(1, M_plot+1), attributeNames_plot, rotation=45)
 plt.title("Boxplot of Standardized Data")
-plt.show()
+plt.show(block=False)
 
 
 
@@ -51,7 +51,7 @@ plt.title("Standardized Boxplot of Attributes", fontsize=16, fontweight="bold")
 plt.xlabel("Attributes", fontsize=14)
 plt.ylabel("Standardized Values", fontsize=14)
 plt.savefig("plots/standardized_boxplot.png")
-plt.show() 
+plt.show(block=False) 
 
 
 
@@ -81,7 +81,7 @@ plt.ylabel("Values", fontsize=14)
 
 # Show the plot
 plt.savefig("plots/boxplot.png")
-plt.show()
+plt.show(block=False)
 
 
 
@@ -107,7 +107,7 @@ for i in range(M_plot):
 plt.suptitle("Histograms of Attributes", fontsize=16, fontweight="bold")
 plt.tight_layout()
 plt.savefig("plots/histograms.png")
-plt.show()
+plt.show(block=False)
 
 
 
@@ -136,7 +136,7 @@ plt.suptitle("Histograms of Attributes (standardized)", fontsize=16, fontweight=
 # Adjust layout to avoid overlap
 plt.tight_layout()
 #plt.savefig("plots/histograms.png")
-plt.show()
+plt.show(block=False)
 
 
 
@@ -175,7 +175,7 @@ for i, (ax, col, attr_name, color) in enumerate(zip(axes.flatten(), numeric_cols
 plt.suptitle("Boxplots of Attributes Grouped by CHD Presence", fontsize=16, fontweight="bold")
 plt.tight_layout()
 plt.savefig("plots/boxplots_chd.png")
-plt.show()
+plt.show(block=False)
 
 
 
@@ -194,17 +194,23 @@ df_plot_hist["chd"] = df_plot_hist["chd"].replace({0: "No CHD", 1: "CHD"})
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
 # --- First plot: Family history count ---
-sns.countplot(x="famhist", data=df_plot_hist, palette=[colors[5], colors[0]], ax=axes[0], width=0.4, edgecolor="black")
+sns.countplot(x="famhist", data=df_plot_hist, palette=["gray"], ax=axes[0], width=0.4, edgecolor="black", 
+              order=["Not Present", "Present"])
 axes[0].set_xlabel("Family History of CHD", fontsize=14)
 axes[0].set_ylabel("Count", fontsize=14)
 axes[0].set_title("Family History Distribution", fontsize=14, fontweight="bold")
 
 # --- Second plot: Family history grouped by CHD ---
-sns.countplot(x="famhist", hue="chd", data=df_plot_hist, palette=[colors[5], colors[0]], ax=axes[1], width=0.4, edgecolor="black")
+sns.countplot(x="famhist", hue="chd", data=df_plot_hist, 
+              palette=[colors[0], colors[5]], ax=axes[1], 
+              width=0.4, edgecolor="black", 
+              order=["Not Present", "Present"])  # Change order here
+
 axes[1].set_xlabel("Family History of CHD", fontsize=14)
 axes[1].set_ylabel("Count", fontsize=14)
 axes[1].set_title("Family History by CHD Status", fontsize=14, fontweight="bold")
 axes[1].legend(title="CHD Status")
+
 
 # Adjust layout
 plt.tight_layout()
