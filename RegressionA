@@ -12,9 +12,9 @@ import sklearn.linear_model as lm
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, confusion_matrix, classification_report
 from sklearn.model_selection import train_test_split
 
-# Define target variable (chd) and features (all others)
-y = df["chd"].values  # Dependent variable
-X = df.drop(columns=["chd"]).values  # Independent variables
+# Define target variable (ldl) and features (all others)
+y = df["ldl"].values  # Dependent variable
+X = df.drop(columns=["ldl"]).values  # Independent variables
 
 # Standardize data: mean = 0, std = 1
 X_stand = zscore(X, ddof=1)
@@ -39,8 +39,8 @@ print(f"R² Score: {r2_linear:.4f}")
 plt.figure(figsize=(8, 5))
 plt.scatter(y + np.random.uniform(-0.05, 0.05, size=len(y)),  # Add jitter
             y_pred_linear, alpha=0.5)
-plt.xlabel("Actual CHD (Jittered)")
-plt.ylabel("Predicted CHD")
+plt.xlabel("Actual LDL (Jittered)")
+plt.ylabel("Predicted LDL")
 plt.title("Linear Regression: Actual vs Predicted CHD")
 plt.axhline(y.mean(), color="r", linestyle="--", label="Mean CHD")
 plt.legend()
@@ -48,39 +48,32 @@ plt.show()
 
 
 
-
-
-
-
+## Nedenstående del er muligvis ikke nødvendig!?
 # Split data into training and test sets (80% training, 20% test)
 X_train, X_test, y_train, y_test = train_test_split(X_stand, y, test_size=0.2, random_state=42)
 
-# Fit logistic regression model
-log_reg_model = lm.LogisticRegression(max_iter=10000)  # Increase max_iter to ensure convergence
-log_reg_model.fit(X_train, y_train)
+# Fit linear regression model on training data
+model_linear_train = lm.LinearRegression()
+model_linear_train.fit(X_train, y_train)
 
-# Predict values using the logistic regression model
-y_pred_logistic = log_reg_model.predict(X_test)
-y_pred_prob = log_reg_model.predict_proba(X_test)[:, 1]  # Probability of class '1' (heart disease)
+# Predict values using the trained model
+y_pred_test = model_linear_train.predict(X_test)
 
-# Model Evaluation for Logistic Regression
-accuracy_logistic = accuracy_score(y_test, y_pred_logistic)
-conf_matrix_logistic = confusion_matrix(y_test, y_pred_logistic)
-class_report_logistic = classification_report(y_test, y_pred_logistic)
+# Compute regression metrics on test data
+mse_test = mean_squared_error(y_test, y_pred_test)
+r2_test = r2_score(y_test, y_pred_test)
 
-# Display results for logistic regression
-print(f"\nLogistic Regression Results:")
-print(f"Accuracy: {accuracy_logistic:.4f}")
-print("\nConfusion Matrix for Logistic Regression:")
-print(conf_matrix_logistic)
-print("\nClassification Report for Logistic Regression:")
-print(class_report_logistic)
+# Display test results
+print(f"\nLinear Regression Test Results:")
+print(f"Mean Squared Error (Test Set): {mse_test:.4f}")
+print(f"R² Score (Test Set): {r2_test:.4f}")
 
-# Plotting Logistic Regression predictions vs actual values
+# Scatter plot: Actual vs. Predicted LDL for test data
 plt.figure(figsize=(8, 5))
-plt.scatter(range(len(y_test)), y_pred_prob, c=y_test, cmap="bwr", alpha=0.5, edgecolors="k")
-plt.xlabel("Sample Index")
-plt.ylabel("Predicted Probability of CHD (1 = Heart Disease)")
-plt.title("Logistic Regression: Predicted Probability of CHD")
-plt.colorbar(label="Actual CHD (0 or 1)")
+plt.scatter(y_test, y_pred_test, alpha=0.5)
+plt.xlabel("Actual LDL")
+plt.ylabel("Predicted LDL")
+plt.title("Linear Regression: Actual vs Predicted LDL (Test Set)")
+plt.axhline(y_test.mean(), color="r", linestyle="--", label="Mean LDL")
+plt.legend()
 plt.show()
