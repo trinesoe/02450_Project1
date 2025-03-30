@@ -89,7 +89,7 @@ for train_index, test_index in CV.split(X,y):
     lambdaI = opt_lambda * np.eye(M)
     lambdaI[0,0] = 0 # Do no regularize the bias term
     w_rlr[:,k] = np.linalg.solve(XtX+lambdaI,Xty).squeeze()
-    # Compute mean squared error with regularization with optimal lambda
+    #  Compute mean squared error with regularization with optimal lambda
     #  Error_train_rlr[k] = np.square(y_train-X_train @ w_rlr[:,k]).sum(axis=0)/y_train.shape[0]
     #  Error_test_rlr[k] = np.square(y_test-X_test @ w_rlr[:,k]).sum(axis=0)/y_test.shape[0]
 
@@ -148,3 +148,40 @@ print('Weights in last fold:')
 for m in range(M):
     print('{:>15} {:>15}'.format(attribute_names[m], np.round(w_rlr[m,-1],2)))
 
+
+
+
+#####------------------------------------------ DEL 3 --------------------------------------------------------------#####
+
+# Extract the optimal weights from the model
+w_opt = w_rlr[:, -1]  # Extract the last fold weights
+
+# Display and interpret the effect of each attribute
+print("\nEffect of individual attributes on LDL prediction:")
+for m in range(1, M):  # Skip the bias term
+    print(f"{attribute_names[m]:<15}: {w_opt[m]:.4f}")
+
+# Compute y
+# Select a sample row index
+sample_index = df.index[0]  # Pick the first row (or replace with another index)
+
+# Define x_new based on selected independent variables
+x_new = np.array([
+    1,  # Bias term
+    df.loc[sample_index, "obesity"], 
+    df.loc[sample_index, "tobacco"], 
+    df.loc[sample_index, "alcohol"], 
+    df.loc[sample_index, "famhist"]
+])
+
+# Ensure w_opt is extracted correctly from w_rlr
+w_opt = w_rlr[:, -1]  # Get weights from the last fold
+
+# Check dimensions before computing dot product
+print(f"Shape of x_new: {x_new.shape}")
+print(f"Shape of w_opt: {w_opt.shape}")
+
+# Compute predicted LDL level
+y_pred = np.dot(x_new, w_opt)  
+
+print("\nPredicted LDL level:", round(y_pred, 2))

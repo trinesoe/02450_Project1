@@ -13,8 +13,9 @@ from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, confus
 from sklearn.model_selection import train_test_split
 
 # Define target variable (ldl) and features (all others)
+selected_features = ["obesity", "tobacco", "alcohol", "famhist"]
 y = df["ldl"].values  # Dependent variable
-X = df.drop(columns=["ldl"]).values  # Independent variables
+X = df[selected_features].values  # Independent variables
 
 # Standardize data: mean = 0, std = 1
 X_stand = zscore(X, ddof=1)
