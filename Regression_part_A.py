@@ -138,6 +138,7 @@ print('- Training error: {0}'.format(Error_train.mean()))
 print('- Test error:     {0}'.format(Error_test.mean()))
 print('- R^2 train:     {0}'.format((Error_train_nofeatures.sum()-Error_train.sum())/Error_train_nofeatures.sum()))
 print('- R^2 test:     {0}\n'.format((Error_test_nofeatures.sum()-Error_test.sum())/Error_test_nofeatures.sum()))
+
 print('Regularized linear regression:')
 print('- Training error: {0}'.format(Error_train_rlr.mean()))
 print('- Test error:     {0}'.format(Error_test_rlr.mean()))
@@ -153,35 +154,29 @@ for m in range(M):
 
 #####------------------------------------------ DEL 3 --------------------------------------------------------------#####
 
-# Extract the optimal weights from the model
-w_opt = w_rlr[:, -1]  # Extract the last fold weights
+# Function to make predictions using the best model
+def predict_ldl(x_new, mu, sigma, w_opt):
+    """
+    Predict LDL cholesterol levels for a new input x_new.
 
-# Display and interpret the effect of each attribute
-print("\nEffect of individual attributes on LDL prediction:")
-for m in range(1, M):  # Skip the bias term
-    print(f"{attribute_names[m]:<15}: {w_opt[m]:.4f}")
+    Parameters:
+    - x_new: A 1D numpy array of shape (M-1,) representing the feature values (excluding offset).
+    - mu: The mean of training data used for standardization.
+    - sigma: The standard deviation of training data used for standardization.
+    - w_opt: The optimal weight vector from regularized regression.
 
-# Compute y
-# Select a sample row index
-sample_index = df.index[0]  # Pick the first row (or replace with another index)
+    Returns:
+    - y_pred: The predicted LDL cholesterol level.
+    """
+    x_new_standardized = (x_new - mu) / (sigma + 1e-10)
+    x_new_augmented = np.concatenate(([1], x_new_standardized))
+    y_pred = x_new_augmented @ w_opt  # Matrix multiplication with learned weights
+    return y_pred
 
-# Define x_new based on selected independent variables
-x_new = np.array([
-    1,  # Bias term
-    df.loc[sample_index, "obesity"], 
-    df.loc[sample_index, "tobacco"], 
-    df.loc[sample_index, "alcohol"], 
-    df.loc[sample_index, "famhist"]
-])
 
-# Ensure w_opt is extracted correctly from w_rlr
-w_opt = w_rlr[:, -1]  # Get weights from the last fold
+# Example usage
+x_new = np.array([120, 1.5, 0, 23, 50, 30, 3, 45, 1])  # Example feature values
+w_optimal = w_rlr[:, -1]  # Optimal weights from the last fold 
 
-# Check dimensions before computing dot product
-print(f"Shape of x_new: {x_new.shape}")
-print(f"Shape of w_opt: {w_opt.shape}")
-
-# Compute predicted LDL level
-y_pred = np.dot(x_new, w_opt)  
-
-print("\nPredicted LDL level:", round(y_pred, 2))
+y_predicted = predict_ldl(x_new, mu.mean(axis=0), sigma.mean(axis=0), w_optimal)
+print("\nPredicted LDL cholesterol level:", y_predicted)
