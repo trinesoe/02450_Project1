@@ -1,0 +1,106 @@
+import importlib_resources
+import numpy as np
+import sklearn.linear_model as lm
+import matplotlib.pyplot as plt
+from scipy.io import loadmat
+from sklearn import model_selection
+from sklearn.linear_model import LogisticRegression
+from Data_preprocessing import *
+from dtuimldmtools import rlr_validate
+
+## Define attribute names
+attribute_names = ['sbp', 'tobacco', 'ldl', 'adiposity', 'typea', 'obesity', 'alcohol', 'age', 'famhist']
+class_name = ['chd']
+
+## Extract X and y
+X = df[attribute_names].to_numpy(dtype=np.float32) 
+y = df[class_name].to_numpy(dtype=np.float32).ravel()
+
+# Number of observations and attributes
+N, M = X.shape 
+
+# Standardize data
+X_standardized = zscore(X, ddof=1)
+X = X_standardized
+
+# No need to add offset attribute, as LogisticRegression adds the intercept automatically.
+# X = np.concatenate((np.ones((X.shape[0],1)),X),1)  # REMOVE THIS LINE
+attribute_names = ['Offset'] + attribute_names  # Offset still there for reporting purposes
+M = M + 1  # Adjust for the added bias term in the logistic model.
+
+## Crossvalidation
+K = 10
+CV = model_selection.KFold(K, shuffle=True)
+
+# Values of lambda
+lambdas = np.power(10., range(-5, 9))
+
+# Initialize variables
+Error_train = np.empty((K, 1))
+Error_test = np.empty((K, 1))
+Error_train_rlr = np.empty((K, 1))
+Error_test_rlr = np.empty((K, 1))
+Error_train_nofeatures = np.empty((K, 1))
+Error_test_nofeatures = np.empty((K, 1))
+w_rlr = np.empty((M, K))
+mu = np.empty((K, M - 1))
+sigma = np.empty((K, M - 1))
+w_noreg = np.empty((M, K))
+
+k = 0
+for train_index, test_index in CV.split(X, y):
+    X_train = X[train_index]
+    y_train = y[train_index]
+    X_test = X[test_index]
+    y_test = y[test_index]
+    internal_cross_validation = 10    
+    
+    opt_val_err, opt_lambda, mean_w_vs_lambda, train_err_vs_lambda, test_err_vs_lambda = rlr_validate(X_train, y_train, lambdas, internal_cross_validation)
+    
+    # Train logistic regression without regularization
+    model_noreg = LogisticRegression(penalty=None, solver='lbfgs').fit(X_train, y_train)
+    Error_train[k] = np.mean(model_noreg.predict(X_train) != y_train)
+    Error_test[k] = np.mean(model_noreg.predict(X_test) != y_test)
+    
+    # Train logistic regression with optimal regularization
+    model_rlr = LogisticRegression(penalty='l2', C=1 / opt_lambda, solver='lbfgs').fit(X_train, y_train)
+    Error_train_rlr[k] = np.mean(model_rlr.predict(X_train) != y_train)
+    Error_test_rlr[k] = np.mean(model_rlr.predict(X_test) != y_test)
+    
+    # Correct: get intercept and coefficients (the intercept term is model_rlr.intercept_)
+    w_rlr[:, k] = np.concatenate(([model_rlr.intercept_[0]], model_rlr.coef_.flatten()))
+    
+    # Plot results for last fold
+    if k == K - 1:
+        plt.figure(k, figsize=(12, 8))
+        plt.subplot(1, 2, 1)
+        plt.semilogx(lambdas, mean_w_vs_lambda.T[:, 1:], ".-")  # Don't plot bias term
+        plt.xlabel("Regularization factor")
+        plt.ylabel("Mean Coefficient Values")
+        plt.grid()
+        plt.legend(attribute_names[1:], loc='best')
+        
+        plt.subplot(1, 2, 2)
+        plt.title("Optimal lambda: 1e{0}".format(np.log10(opt_lambda)))
+        plt.loglog(lambdas, train_err_vs_lambda.T, "b.-", lambdas, test_err_vs_lambda.T, "r.-")
+        plt.xlabel("Regularization factor")
+        plt.ylabel("Misclassification error (cross-validation)")
+        plt.legend(["Train error", "Validation error"])
+        plt.grid()
+    
+    k += 1
+
+plt.show()
+
+# Display results
+print('Logistic regression without regularization:')
+print('- Training error: {0}'.format(Error_train.mean()))
+print('- Test error:     {0}'.format(Error_test.mean()))
+
+print('Regularized logistic regression:')
+print('- Training error: {0}'.format(Error_train_rlr.mean()))
+print('- Test error:     {0}'.format(Error_test_rlr.mean()))
+
+print('Weights in last fold:')
+for m in range(M):
+    print('{:>15} {:>15}'.format(attribute_names[m], np.round(w_rlr[m, -1], 2)))
