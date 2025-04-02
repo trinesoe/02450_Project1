@@ -23,7 +23,7 @@ X = X_standardized
 
 # Define cross-validation parameters
 K = 10  # Both outer and inner folds
-lambda_interval = np.logspace(-1, 2, 20)  # Smaller range for better precision
+lambda_interval = np.logspace(-1, 3, 20)  # Smaller range for better precision
 
 # Initialize KFold for outer CV
 CV = model_selection.KFold(n_splits=K, shuffle=True, random_state=42)
@@ -31,6 +31,8 @@ CV = model_selection.KFold(n_splits=K, shuffle=True, random_state=42)
 # Store lambda* and test errors
 lambda_star = np.zeros(K)
 Error_test_outer = np.zeros(K)
+
+
 
 # Outer loop
 k_outer = 0  
@@ -42,17 +44,20 @@ for train_outer_index, test_outer_index in CV.split(X):
     y_test_outer = y[test_outer_index]
 
 
-    data_outer_test_length = float(len(y_test_outer))
+    data_outer_test_length = float(len(y_test_outer)) # |D^{par}_i|
 
     # Inner cross-validation
     CV_inner = model_selection.KFold(n_splits=K, shuffle=True, random_state=42)
-    validation_errors = np.zeros(len(lambda_interval))
+   
 
     for train_inner_index, val_inner_index in CV_inner.split(X_train_outer):
         X_train_inner = X_train_outer[train_inner_index]
         y_train_inner = y_train_outer[train_inner_index]
         X_val_inner = X_train_outer[val_inner_index]
         y_val_inner = y_train_outer[val_inner_index]
+
+        val_size = float(len(y_val_inner))  # |D^{val}_j|
+        validation_errors = np.zeros(len(lambda_interval))
 
         for s in range(0,len(lambda_interval)):
             mdl = LogisticRegression(penalty="l2", C=1 / lambda_interval[s])
@@ -70,8 +75,12 @@ for train_outer_index, test_outer_index in CV.split(X):
     # Compute mean validation error for each lambda
     #validation_errors /= K  # Ensure averaging over folds
 
+    # For each s compute E_gen_s
+    E_gen_s = (val_size/data_outer_test_length)*validation_errors  # rlr??
+
     # Select best lambda (minimum validation error)
-    best_lambda_idx = np.argmin(validation_errors)
+    best_lambda_idx = np.argmin(E_gen_s)
+    #best_lambda_idx = np.argmin(validation_errors)
     lambda_star[k_outer] = lambda_interval[best_lambda_idx]
 
     # Train final model using the best lambda on the entire outer training set
@@ -99,3 +108,4 @@ df_results = pd.DataFrame({
 generalization_error_logistic_model = np.sum(np.multiply(Error_test_outer,data_outer_test_length)) * (1/N)
 print(df_results)
 print(f"Estimated Generalization Error: {generalization_error_logistic_model:.4f}")
+
