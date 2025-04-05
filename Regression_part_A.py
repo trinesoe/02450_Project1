@@ -57,9 +57,8 @@ mu = np.empty((K, M-1))
 sigma = np.empty((K, M-1))
 w_noreg = np.empty((M,K))
 
-k=-1 # <-- Start at -1 so first loop makes it 0
+k = 0
 for train_index, test_index in CV.split(X,y):
-    k += 1
 
     # extract training and test set for current CV fold
     X_train = X[train_index]
@@ -112,6 +111,8 @@ for train_index, test_index in CV.split(X,y):
     m = lm.LinearRegression().fit(X_train, y_train)
     Error_train[k] = np.square(y_train-m.predict(X_train)).sum()/y_train.shape[0]
     Error_test[k] = np.square(y_test-m.predict(X_test)).sum()/y_test.shape[0]
+
+    k+=1
 
     # Display the results for the last cross-validation fol
     if k == K - 1:
