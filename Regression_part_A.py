@@ -57,16 +57,24 @@ mu = np.empty((K, M-1))
 sigma = np.empty((K, M-1))
 w_noreg = np.empty((M,K))
 
-k=0
+k=-1 # <-- Start at -1 so first loop makes it 0
 for train_index, test_index in CV.split(X,y):
-    
+    k += 1
+
     # extract training and test set for current CV fold
     X_train = X[train_index]
     y_train = y[train_index]
     X_test = X[test_index]
     y_test = y[test_index]
-    internal_cross_validation = 10    
     
+    internal_cross_validation = 10    
+
+    ## Standardize based on training set
+    mu[k, :] = np.mean(X_train[:, 1:], 0)
+    sigma[k, :] = np.std(X_train[:, 1:], 0)
+    X_train[:, 1:] = (X_train[:, 1:] - mu[k, :]) / sigma[k, :]
+    X_test[:, 1:] = (X_test[:, 1:] - mu[k, :]) / sigma[k, :]
+      
     opt_val_err, opt_lambda, mean_w_vs_lambda, train_err_vs_lambda, test_err_vs_lambda = rlr_validate(X_train, y_train, lambdas, internal_cross_validation)
 
     # Standardize outer fold based on training set, and save the mean and standard
@@ -85,6 +93,7 @@ for train_index, test_index in CV.split(X,y):
     Error_train_nofeatures[k] = np.square(y_train-y_train.mean()).sum(axis=0)/y_train.shape[0]
     Error_test_nofeatures[k] = np.square(y_test-y_test.mean()).sum(axis=0)/y_test.shape[0]
 
+    # Regularized weights
     # Estimate weights for the optimal value of lambda, on entire training set
     lambdaI = opt_lambda * np.eye(M)
     lambdaI[0,0] = 0 # Do no regularize the bias term
@@ -93,6 +102,7 @@ for train_index, test_index in CV.split(X,y):
     #  Error_train_rlr[k] = np.square(y_train-X_train @ w_rlr[:,k]).sum(axis=0)/y_train.shape[0]
     #  Error_test_rlr[k] = np.square(y_test-X_test @ w_rlr[:,k]).sum(axis=0)/y_test.shape[0]
 
+    # Unregularized linear regression
     # Estimate weights for unregularized linear regression, on entire training set
     w_noreg[:,k] = np.linalg.solve(XtX,Xty).squeeze()
     # Compute mean squared error without regularization
@@ -129,7 +139,6 @@ for train_index, test_index in CV.split(X,y):
     #print('Train indices: {0}'.format(train_index))
     #print('Test indices: {0}\n'.format(test_index))
 
-    k+=1
 
 plt.show()
 # Display results
@@ -156,27 +165,18 @@ for m in range(M):
 
 # Function to make predictions using the best model
 def predict_ldl(x_new, mu, sigma, w_opt):
-    """
-    Predict LDL cholesterol levels for a new input x_new.
-
-    Parameters:
-    - x_new: A 1D numpy array of shape (M-1,) representing the feature values (excluding offset).
-    - mu: The mean of training data used for standardization.
-    - sigma: The standard deviation of training data used for standardization.
-    - w_opt: The optimal weight vector from regularized regression.
-
-    Returns:
-    - y_pred: The predicted LDL cholesterol level.
-    """
     x_new_standardized = (x_new - mu) / (sigma + 1e-10)
     x_new_augmented = np.concatenate(([1], x_new_standardized))
-    y_pred = x_new_augmented @ w_opt  # Matrix multiplication with learned weights
+    y_pred = x_new_augmented @ w_opt
     return y_pred
 
+# Example input (update values as needed)
+x_new = np.array([120, 1.5, 0, 23, 50, 30, 3, 45, 1])  # sbp, tobacco, ..., famhist
 
-# Example usage
-x_new = np.array([120, 1.5, 0, 23, 50, 30, 3, 45, 1])  # Example feature values
-w_optimal = w_rlr[:, -1]  # Optimal weights from the last fold 
+# Use the last fold’s mu/sigma and weights for prediction
+x_mu = mu[-1, :]
+x_sigma = sigma[-1, :]
+w_optimal = w_rlr[:, -1]
 
-y_predicted = predict_ldl(x_new, mu.mean(axis=0), sigma.mean(axis=0), w_optimal)
-print("\nPredicted LDL cholesterol level:", y_predicted)
+y_predicted = predict_ldl(x_new, x_mu, x_sigma, w_optimal)
+print("\n Predicted LDL cholesterol level:", y_predicted)
