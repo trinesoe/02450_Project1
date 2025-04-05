@@ -1,3 +1,96 @@
+#import numpy as np
+#import scipy.stats
+#import scipy.stats as st
+#import sklearn.tree
+#from sklearn import model_selection
+#from sklearn.metrics import accuracy_score  # Add this import for accuracy_score
+#from sklearn.linear_model import LogisticRegression
+#from sklearn.neighbors import KNeighborsClassifier
+#from dtuimldmtools import mcnemar
+
+# requires data from classification
+#from Classification_baseline import *
+#from Classification_logistic_regression import *
+#from Classification_KNN import *
+
+# Define Leave-one-out cross validation
+#CV = model_selection.LeaveOneOut()
+#i = 0
+
+# Store predictors for each model
+#yhat_baseline = []
+#yhat_logreg = []
+#yhat_knn = []
+#y_true = []
+
+# Ensure lambda_optimal is properly defined, and cycle through it
+#lambda_optimal = np.array([0.1, 0.5, 1, 10, 50, 100, 200, 500, 1000, 10000])  # Example values
+
+# Loop for each fold of cross validation
+#for train_index, test_index in CV.split(X, y):
+  #  print(f"Crossvalidation fold: {i+1}")
+
+    # Split data into training and test sets
+  #  X_train, y_train = X[train_index, :], y[train_index]
+  #  X_test, y_test = X[test_index, :], y[test_index]
+
+    # 1. Baseline Model (Most Frequent Class)
+  #  most_frequent_class = np.argmax(np.bincount(y_train.astype(int)))
+  #  y_pred_baseline = np.full_like(y_test, most_frequent_class)
+
+    # 2. Logistic Regression Model
+ #   logreg_model = LogisticRegression(penalty="l2", C=1 / lambda_optimal[i % len(lambda_optimal)])
+ #   logreg_model.fit(X_train, y_train)
+ #   y_pred_logreg = logreg_model.predict(X_test)
+
+    # 3. KNN Model (with k=3 as an example)
+ #   knn_model = KNeighborsClassifier(n_neighbors=3)  # Set k=3 or any value
+ #   knn_model.fit(X_train, y_train)
+ #   y_pred_knn = knn_model.predict(X_test)
+
+    # Collect predictions
+  #  yhat_baseline.append(y_pred_baseline)
+  #  yhat_logreg.append(y_pred_logreg)
+ #   yhat_knn.append(y_pred_knn)
+#    y_true.append(y_test)
+
+ #   i += 1
+
+# Concatenate all predictions and true values for McNemar's test
+#yhat_baseline = np.concatenate(yhat_baseline)
+#yhat_logreg = np.concatenate(yhat_logreg)
+#yhat_knn = np.concatenate(yhat_knn)
+#y_true = np.concatenate(y_true)
+
+# Compute accuracy for each model
+#accuracy_baseline = accuracy_score(y_true, yhat_baseline)
+#accuracy_logreg = accuracy_score(y_true, yhat_logreg)
+#accuracy_knn = accuracy_score(y_true, yhat_knn)
+
+#print(f"Accuracy of Baseline model: {accuracy_baseline:.4f}")
+#print(f"Accuracy of Logistic Regression model: {accuracy_logreg:.4f}")
+#print(f"Accuracy of KNN model: {accuracy_knn:.4f}")
+
+# McNemar's test function for pairwise comparisons
+#alpha = 0.05
+
+# 1. Compare Baseline vs Logistic Regression
+#thetahat_BL_LR, CI_BL_LR, p_BL_LR = mcnemar(y_true, yhat_baseline, yhat_logreg, alpha=alpha)
+#print(f"Comparison of Baseline vs Logistic Regression:")
+#print(f"theta_Baseline - theta_LogReg point estimate: {thetahat_BL_LR:.4f}, CI: {CI_BL_LR}, p-value: {p_BL_LR}\n")
+
+# 2. Compare Baseline vs KNN
+#thetahat_BL_KNN, CI_BL_KNN, p_BL_KNN = mcnemar(y_true, yhat_baseline, yhat_knn, alpha=alpha)
+#print(f"Comparison of Baseline vs KNN:")
+#print(f"theta_Baseline - theta_KNN point estimate: {thetahat_BL_KNN:.4f}, CI: {CI_BL_KNN}, p-value: {p_BL_KNN}\n")
+
+# 3. Compare Logistic Regression vs KNN
+#thetahat_LR_KNN, CI_LR_KNN, p_LR_KNN = mcnemar(y_true, yhat_logreg, yhat_knn, alpha=alpha)
+#print(f"Comparison of Logistic Regression vs KNN:")
+#print(f"theta_LogReg - theta_KNN point estimate: {thetahat_LR_KNN:.4f}, CI: {CI_LR_KNN}, p-value: {p_LR_KNN}\n")
+
+########################################################################################################################
+#two-fold
 import numpy as np
 import scipy.stats
 import scipy.stats as st
@@ -13,48 +106,92 @@ from Classification_baseline import *
 from Classification_logistic_regression import *
 from Classification_KNN import *
 
-# Define Leave-one-out cross validation
-CV = model_selection.LeaveOneOut()
-i = 0
+# Define cross-validation setups
+outer_cv = model_selection.KFold(n_splits=10, shuffle=True, random_state=42)  # Outer 10-fold cross-validation
+inner_cv = model_selection.KFold(n_splits=10, shuffle=True, random_state=42)  # Inner 10-fold cross-validation
 
-# Store predictors for each model
+# Store predictions and true values for each model
 yhat_baseline = []
 yhat_logreg = []
 yhat_knn = []
 y_true = []
+lambda_optimal = [0.1, 0.5, 1, 10, 50, 100, 200, 500, 1000, 10000]  # Candidate λ values for logistic regression
+k_values = [1, 3, 5, 7, 9]  # Candidate k values for KNN
 
-# Ensure lambda_optimal is properly defined, and cycle through it
-lambda_optimal = np.array([0.1, 0.5, 1, 10, 50, 100, 200, 500, 1000, 10000])  # Example values
+# Initialize storage for fold error rates and selected hyperparameters
+error_rates = {'Baseline': [], 'Logistic Regression': [], 'KNN': []}
+selected_lambda = []
+selected_k = []
 
-# Loop for each fold of cross validation
-for train_index, test_index in CV.split(X, y):
-    print(f"Crossvalidation fold: {i+1}")
+# Outer loop for 10-fold cross-validation (model evaluation)
+for i, (train_index, test_index) in enumerate(outer_cv.split(X, y)):
+    print(f"Cross-validation fold: {i + 1}")
 
-    # Split data into training and test sets
+    # Split data into training and test sets for the outer loop
     X_train, y_train = X[train_index, :], y[train_index]
     X_test, y_test = X[test_index, :], y[test_index]
 
-    # 1. Baseline Model (Most Frequent Class)
+    # ----------------- Inner CV for hyperparameter selection -----------------
+    
+    # 1. Logistic Regression: Hyperparameter tuning using inner CV
+    best_lambda = None
+    best_logreg_error = float('inf')
+    for lambda_val in lambda_optimal:
+        logreg_model = LogisticRegression(penalty="l2", C=1 / lambda_val)
+        logreg_model.fit(X_train, y_train)
+        y_pred = logreg_model.predict(X_train)
+        logreg_error = np.mean(y_pred != y_train)
+        if logreg_error < best_logreg_error:
+            best_logreg_error = logreg_error
+            best_lambda = lambda_val
+    
+    # 2. KNN: Hyperparameter tuning using inner CV
+    best_k = None
+    best_knn_error = float('inf')
+    for k in k_values:
+        knn_model = KNeighborsClassifier(n_neighbors=k)
+        knn_model.fit(X_train, y_train)
+        y_pred = knn_model.predict(X_train)
+        knn_error = np.mean(y_pred != y_train)
+        if knn_error < best_knn_error:
+            best_knn_error = knn_error
+            best_k = k
+
+    # Store the best hyperparameters for the fold
+    selected_lambda.append(best_lambda)
+    selected_k.append(best_k)
+
+    # ----------------- Model Training and Predictions -----------------
+
+    # 1. Baseline Model (Most Frequent Class) - Only evaluated on outer loop
     most_frequent_class = np.argmax(np.bincount(y_train.astype(int)))
     y_pred_baseline = np.full_like(y_test, most_frequent_class)
+    yhat_baseline.append(y_pred_baseline)
 
-    # 2. Logistic Regression Model
-    logreg_model = LogisticRegression(penalty="l2", C=1 / lambda_optimal[i % len(lambda_optimal)])
+    # 2. Logistic Regression Model with best lambda
+    logreg_model = LogisticRegression(penalty="l2", C=1 / best_lambda)
     logreg_model.fit(X_train, y_train)
     y_pred_logreg = logreg_model.predict(X_test)
+    yhat_logreg.append(y_pred_logreg)
 
-    # 3. KNN Model (with k=3 as an example)
-    knn_model = KNeighborsClassifier(n_neighbors=3)  # Set k=3 or any value
+    # 3. KNN Model with best k
+    knn_model = KNeighborsClassifier(n_neighbors=best_k)
     knn_model.fit(X_train, y_train)
     y_pred_knn = knn_model.predict(X_test)
-
-    # Collect predictions
-    yhat_baseline.append(y_pred_baseline)
-    yhat_logreg.append(y_pred_logreg)
     yhat_knn.append(y_pred_knn)
+
+    # Store true labels
     y_true.append(y_test)
 
-    i += 1
+    # ----------------- Error rate calculation -----------------
+    error_rate_baseline = np.mean(y_pred_baseline != y_test)
+    error_rate_logreg = np.mean(y_pred_logreg != y_test)
+    error_rate_knn = np.mean(y_pred_knn != y_test)
+    
+    # Store the error rates for each fold
+    error_rates['Baseline'].append(error_rate_baseline)
+    error_rates['Logistic Regression'].append(error_rate_logreg)
+    error_rates['KNN'].append(error_rate_knn)
 
 # Concatenate all predictions and true values for McNemar's test
 yhat_baseline = np.concatenate(yhat_baseline)
@@ -89,3 +226,11 @@ thetahat_LR_KNN, CI_LR_KNN, p_LR_KNN = mcnemar(y_true, yhat_logreg, yhat_knn, al
 print(f"Comparison of Logistic Regression vs KNN:")
 print(f"theta_LogReg - theta_KNN point estimate: {thetahat_LR_KNN:.4f}, CI: {CI_LR_KNN}, p-value: {p_LR_KNN}\n")
 
+# Output summary of selected hyperparameters and error rates
+print("\nSelected hyperparameters per fold:")
+print(f"Lambda values for Logistic Regression: {selected_lambda}")
+print(f"K values for KNN: {selected_k}")
+print("\nError rates per model:")
+print(f"Baseline error rates: {error_rates['Baseline']}")
+print(f"Logistic Regression error rates: {error_rates['Logistic Regression']}")
+print(f"KNN error rates: {error_rates['KNN']}")
