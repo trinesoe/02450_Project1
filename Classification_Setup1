@@ -1,0 +1,91 @@
+import numpy as np
+import scipy.stats
+import scipy.stats as st
+import sklearn.tree
+from sklearn import model_selection
+from sklearn.metrics import accuracy_score  # Add this import for accuracy_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from dtuimldmtools import mcnemar
+
+# requires data from classification
+from Classification_baseline import *
+from Classification_logistic_regression import *
+from Classification_KNN import *
+
+# Define Leave-one-out cross validation
+CV = model_selection.LeaveOneOut()
+i = 0
+
+# Store predictors for each model
+yhat_baseline = []
+yhat_logreg = []
+yhat_knn = []
+y_true = []
+
+# Ensure lambda_optimal is properly defined, and cycle through it
+lambda_optimal = np.array([0.1, 0.5, 1, 10, 50, 100, 200, 500, 1000, 10000])  # Example values
+
+# Loop for each fold of cross validation
+for train_index, test_index in CV.split(X, y):
+    print(f"Crossvalidation fold: {i+1}")
+
+    # Split data into training and test sets
+    X_train, y_train = X[train_index, :], y[train_index]
+    X_test, y_test = X[test_index, :], y[test_index]
+
+    # 1. Baseline Model (Most Frequent Class)
+    most_frequent_class = np.argmax(np.bincount(y_train.astype(int)))
+    y_pred_baseline = np.full_like(y_test, most_frequent_class)
+
+    # 2. Logistic Regression Model
+    logreg_model = LogisticRegression(penalty="l2", C=1 / lambda_optimal[i % len(lambda_optimal)])
+    logreg_model.fit(X_train, y_train)
+    y_pred_logreg = logreg_model.predict(X_test)
+
+    # 3. KNN Model (with k=3 as an example)
+    knn_model = KNeighborsClassifier(n_neighbors=3)  # Set k=3 or any value
+    knn_model.fit(X_train, y_train)
+    y_pred_knn = knn_model.predict(X_test)
+
+    # Collect predictions
+    yhat_baseline.append(y_pred_baseline)
+    yhat_logreg.append(y_pred_logreg)
+    yhat_knn.append(y_pred_knn)
+    y_true.append(y_test)
+
+    i += 1
+
+# Concatenate all predictions and true values for McNemar's test
+yhat_baseline = np.concatenate(yhat_baseline)
+yhat_logreg = np.concatenate(yhat_logreg)
+yhat_knn = np.concatenate(yhat_knn)
+y_true = np.concatenate(y_true)
+
+# Compute accuracy for each model
+accuracy_baseline = accuracy_score(y_true, yhat_baseline)
+accuracy_logreg = accuracy_score(y_true, yhat_logreg)
+accuracy_knn = accuracy_score(y_true, yhat_knn)
+
+print(f"Accuracy of Baseline model: {accuracy_baseline:.4f}")
+print(f"Accuracy of Logistic Regression model: {accuracy_logreg:.4f}")
+print(f"Accuracy of KNN model: {accuracy_knn:.4f}")
+
+# McNemar's test function for pairwise comparisons
+alpha = 0.05
+
+# 1. Compare Baseline vs Logistic Regression
+thetahat_BL_LR, CI_BL_LR, p_BL_LR = mcnemar(y_true, yhat_baseline, yhat_logreg, alpha=alpha)
+print(f"Comparison of Baseline vs Logistic Regression:")
+print(f"theta_Baseline - theta_LogReg point estimate: {thetahat_BL_LR:.4f}, CI: {CI_BL_LR}, p-value: {p_BL_LR}\n")
+
+# 2. Compare Baseline vs KNN
+thetahat_BL_KNN, CI_BL_KNN, p_BL_KNN = mcnemar(y_true, yhat_baseline, yhat_knn, alpha=alpha)
+print(f"Comparison of Baseline vs KNN:")
+print(f"theta_Baseline - theta_KNN point estimate: {thetahat_BL_KNN:.4f}, CI: {CI_BL_KNN}, p-value: {p_BL_KNN}\n")
+
+# 3. Compare Logistic Regression vs KNN
+thetahat_LR_KNN, CI_LR_KNN, p_LR_KNN = mcnemar(y_true, yhat_logreg, yhat_knn, alpha=alpha)
+print(f"Comparison of Logistic Regression vs KNN:")
+print(f"theta_LogReg - theta_KNN point estimate: {thetahat_LR_KNN:.4f}, CI: {CI_LR_KNN}, p-value: {p_LR_KNN}\n")
+
