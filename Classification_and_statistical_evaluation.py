@@ -33,7 +33,7 @@ K2 = 10 # K for inner fold
 
 # Number of neighbors
 min_k = 1  # Minimum number of neighbors
-max_k = 35  # Maximum number of neighbors
+max_k = 30  # Maximum number of neighbors
 k_values = list(range(min_k,max_k+1))
 
 # Set lambda interval
@@ -184,7 +184,7 @@ df_results = pd.DataFrame({
 # Compute estimated generalization error for the logistic regression model
 generalization_error_logistic_model = np.sum(np.multiply(Error_test_outer_log,data_outer_test_length)) * (1/N)
 print(df_results)
-print(f"Estimated Generalization Error: {generalization_error_logistic_model:.4f}")
+print(f"Estimated Generalization Error (Logistic): {generalization_error_logistic_model:.4f}")
 
 # Create summary table
 summary_df = pd.DataFrame({
@@ -196,7 +196,7 @@ summary_df = pd.DataFrame({
 # Compute estimated generalization error for the KNN model
 generalization_error_knn = np.sum(np.multiply(Error_test_outer_knn, data_outer_test_length)) * (1/N)
 print(summary_df)
-print(f"Estimated Generalization Error: {generalization_error_knn:.4f}")
+print(f"Estimated Generalization Error (knn): {generalization_error_knn:.4f}")
 
 # Store results in DataFrame
 df_results = pd.DataFrame({
@@ -233,6 +233,14 @@ print(f"Accuracy of KNN model: {accuracy_knn:.4f}")
 # McNemar's test function for pairwise comparisons
 alpha = 0.05
 
+# 1. Compare Baseline vs Logistic Regression
+thetahat_BL_LR, CI_BL_LR, p_BL_LR = mcnemar(y_true, yhat_baseline, yhat_logreg, alpha=alpha)
+
+# 2. Compare Baseline vs KNN
+thetahat_BL_KNN, CI_BL_KNN, p_BL_KNN = mcnemar(y_true, yhat_baseline, yhat_knn, alpha=alpha)
+
+# 3. Compare Logistic Regression vs KNN
+thetahat_LR_KNN, CI_LR_KNN, p_LR_KNN = mcnemar(y_true, yhat_logreg, yhat_knn, alpha=alpha)
 
 # Create a summary table for McNemar's test results
 mcnemar_results = pd.DataFrame({
