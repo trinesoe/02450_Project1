@@ -23,7 +23,7 @@ X = X_standardized
 
 # Define cross-validation parameters
 min_k = 1  # Minimum number of neighbors
-max_k = 35  # Maximum number of neighbors
+max_k = 30  # Maximum number of neighbors
 
 k_values = list(range(min_k,max_k+1))
 
